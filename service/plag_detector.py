@@ -10,7 +10,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 from model import Document
 from service.base import BaseService
-from service.plag_dao import PlagiarismDAO
+from service.bid_rigging_dao import PlagiarismDAO
 from util.injector import inject
 
 

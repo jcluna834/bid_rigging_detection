@@ -58,8 +58,8 @@ CREATE TABLE `documentstatus` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 #REGISTERS documentstatus
-INSERT INTO plagiarism_detection.documentstatus (id, name, description) VALUES(1, 'Subido', 'Documento subido a la BD y almacenado físicamente');
-INSERT INTO plagiarism_detection.documentstatus (id, name, description) VALUES(2, 'Analizado', 'Documento con análisis de similitud');
+INSERT INTO plagiarism_detection.documentstatus (id, name, description) VALUES(1, 'Subido', 'Documento subido a la BD y almacenado fï¿½sicamente');
+INSERT INTO plagiarism_detection.documentstatus (id, name, description) VALUES(2, 'Analizado', 'Documento con anï¿½lisis de similitud');
 INSERT INTO plagiarism_detection.documentstatus (id, name, description) VALUES(3, 'Indexado', 'Documento indexado en Elastic Search');
 
 
@@ -105,6 +105,8 @@ CREATE TABLE `documents` (
   CONSTRAINT `documents_announcement_fk` FOREIGN KEY (`announcementCode`) REFERENCES `announcement` (`id`),
   CONSTRAINT `documents_documentstatus_fk` FOREIGN KEY (`status`) REFERENCES `documentstatus` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+
+ALTER TABLE plagiarism_detection.documents ADD documentType int(11) DEFAULT 1 NOT NULL;
 
 #REGISTERS 
 

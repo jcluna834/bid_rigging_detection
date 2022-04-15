@@ -10,21 +10,6 @@ from sqlalchemy.sql.expression import bindparam
 
 class BidRiggingDAO(BaseService):
 
-    def yield_docs(self, page=1, per_page=10):
-        """
-        Yields a list of documents per page.
-        :param page:
-        :param per_page:
-        :return:
-        """
-        docs = self.get_docs(page=page, per_page=per_page)
-        iterations = ceil(docs['count'] / per_page)
-
-        yield docs
-        for _page in range(page + 1, iterations + 1):
-            docs = self.get_docs(page=_page, per_page=per_page)
-            yield docs
-
     def get_docs(self, page=1, per_page=10, all=False):
         """
         Fetches documents' list.
@@ -45,7 +30,6 @@ class BidRiggingDAO(BaseService):
             "data": docs,
             "count": count
         }
-
     
     def get_docs_info(self):
         """
@@ -82,17 +66,6 @@ class BidRiggingDAO(BaseService):
         doc_queryset = Document.query.filter_by(**query)
         docs = doc_queryset.one()
         return docs.to_dict_es()
-
-    def get_doc_info(self, documentId):
-        """
-        get especific document' .
-        :param id: Document id
-        :return: List of documents
-        """
-        query = {'is_deleted': 0, 'id':documentId}
-        doc_queryset = Document.query.filter_by(**query)
-        docs = doc_queryset.one()
-        return docs.to_dict()
 
     def create_doc(self, content, title, fileName, description='', responsibleCode='', announcementCode='', documentType=2):
         """

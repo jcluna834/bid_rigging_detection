@@ -2,8 +2,8 @@ __author__ = "Julio Luna"
 __email__ = "jcluna834@gmail.com"
 
 import unittest
-from service.plag_dao import PlagiarismDAO
-from service.plag_detector import PlagiarismDetector
+from service.bid_rigging_dao import BidRiggingDAO
+from service.bid_detector import PlagiarismDetector
 from sqlalchemy.exc import SQLAlchemyError
 from util.injector import inject
 import json
@@ -14,7 +14,7 @@ from uuid import uuid4
 class TestPlagiarismDetection(unittest.TestCase):
 
     def setUp(self):
-        self.plag_dao: PlagiarismDAO = inject(PlagiarismDAO)
+        self.plag_dao: BidRiggingDAO = inject(BidRiggingDAO)
         self.plag_detector: PlagiarismDetector = inject(PlagiarismDetector)
         self.host = 'http://0.0.0.0:5000'
 

@@ -6,10 +6,12 @@ from controller.base import BaseController
 from flask import jsonify, request
 from pymongo import MongoClient
 from settings import app, config
-from scipy.stats import kurtosis
 from util.injector import inject
 from service.bid_detector import BidRiggingDetector
 from datetime import datetime
+from bson.objectid import ObjectId
+from service.announcement_dao import AnnouncementDAO
+import json 
 
 
 client = MongoClient('localhost:27017')
@@ -22,10 +24,46 @@ def getCurrentEntity():
     return config['ENTITYID']
 class BidRiggingDetection(BaseController):
     bid_detector: BidRiggingDetector = inject(BidRiggingDetector)
+    announcement_dao: AnnouncementDAO = inject(AnnouncementDAO)
 
     def __init__(self):
         self.events = []
 
+    
+    @app.route("/api/v1/bidrigging/detect/getReportsBidRiggingByAnnouncement/<announcementCode>", methods=['GET'])
+    def getReportsSimilarityByDocumentId(announcementCode):
+        bidRiggingController = BidRiggingDetection()
+        # Se obtiene la información del documento
+        db = client.get_database(__collection__)
+        collection = db.BidRiggingDetectionAnalysis
+        responseCollection = collection.find({"responsibleCode": getCurrentUser(), "announcementCode": announcementCode})
+        proposals = list(responseCollection)
+        return jsonify(status_code=200, message='Reports returned successfully!', data=proposals)
+
+    @app.route("/api/v1/bidrigging/detect/getReport/<id>", methods=['GET'])
+    def getReport(id):
+        try:
+            db = client.get_database(__collection__)
+            collection = db.BidRiggingDetectionAnalysis
+            responseCollection = collection.find({"_id":ObjectId(id)})
+            list_cur = list(responseCollection)
+        except:
+            #Se limpia el historico
+            return jsonify(status_code=500, message='Error to get report!')
+        return jsonify(status_code=200, message='Report returned successfully!', data=list_cur)
+
+    @app.route("/api/v1/bidrigging/getAnnouncementInfo/<announcementID>", methods=['GET'])
+    def getAnnouncementInfo(announcementID):
+        try:
+            bidRiggingController = BidRiggingDetection()
+            announcement = bidRiggingController.announcement_dao.get_announcement(announcementID)
+            print("-------------")
+            print(announcement)
+        except:
+            #Se limpia el historico
+            return jsonify(status_code=500, message='Error to get announcement!')
+        return jsonify(status_code=200, message='Report returned successfully!', data = announcement)
+        
     @app.route("/api/v1/bidrigging/detect/executeBidRiggingAnalisis", methods=['POST'])
     def executeBidRiggingAnalisis():
         try:
@@ -55,7 +93,7 @@ class BidRiggingDetection(BaseController):
                         if prod["Identificación"] == product["Identificación"]:
                             productsList.append(prod["Total"])
                             break
-                    productsDict = {"PROD_ID": product["Identificación"], "PROD_LIST": productsList}
+                    productsDict = {"PROD_ID": product["Identificación"], "PROD_NAME": product["Nombre del producto/servicio"], "PROD_LIST": productsList}
                 products.append(productsDict)
             
             anaylisis_prod = []
@@ -63,6 +101,7 @@ class BidRiggingDetection(BaseController):
                 response = bidRiggingController.bid_detector.calculateMeasures(product["PROD_LIST"])
                 data = {
                     'PROD_ID': product['PROD_ID'],
+                    'PROD_NAME': product['PROD_NAME'],
                     'PROD_LIST': product["PROD_LIST"],
                     'Anaylis': response
                 }

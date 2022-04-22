@@ -77,13 +77,14 @@ class Document(BaseController):
         return self.saveDocument(data, "save")
 
     @intercept()
-    def get(self):
+    def get(self, *args, **kwargs):
+        print('-------------')
         """
         Fetches all the documents(paginated).
         :return:
         """
-        res = self.bid_rigging_dao.get_docs_info()
-        
+        announcementCode = request.args.get('announcementCode')
+        res = self.bid_rigging_dao.get_docs_info(announcementCode)
         docs_info = dict(data=[d for d in res['data']], count=res['count'])
         return Response(data=docs_info)
 

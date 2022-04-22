@@ -31,7 +31,7 @@ class BidRiggingDAO(BaseService):
             "count": count
         }
     
-    def get_docs_info(self):
+    def get_docs_info(self, announcementID):
         """
         Fetches documents' list.
         :param page: Current page, defaults to 1
@@ -42,9 +42,14 @@ class BidRiggingDAO(BaseService):
         stmt = text("select d.id as documentId, d.title, d.description as documentDescription, a.id as announcementCode, a.name as announcementName, d.fileName, d.status "
             "from documents d join announcement a on d.announcementCode = a.id "
             "where d.is_deleted = 0 and a.is_deleted = 0 and d.documentType = 2 and d.responsibleCode = :codeUser and a.responsible_code = :codeUser "
+            "and d.announcementCode = :announcementCode "
             "order by d.title ").\
-            bindparams(codeUser=config['USERAUTHID'])
-            
+            bindparams(codeUser=config['USERAUTHID'], announcementCode = announcementID)
+
+        
+        print(".---------------")
+        print(stmt)
+
         records = self.db.session.execute(stmt).fetchall()
         insertObject = []
         columnNames = [column for column in self.db.session.execute(stmt).keys()]

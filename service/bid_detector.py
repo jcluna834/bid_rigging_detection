@@ -4,6 +4,8 @@ __email__ = "jcluna834@gmail.com"
 from service.base import BaseService
 import numpy as np
 import sys
+from sklearn.metrics import pairwise_distances
+from settings import config
 
 class BidRiggingDetector(BaseService):
 
@@ -95,3 +97,84 @@ class BidRiggingDetector(BaseService):
             "NormalizeRelativeDifference" : normDiffRel,
         }
         return response
+
+    @staticmethod
+    def powerMethodNumpy(totals):
+        max_iteration = config['MAX_ITERATIONS']
+        size = len(totals)
+        x = np.ones(size)
+        a = np.array(totals)
+
+        for i in range(max_iteration):
+            x = np.dot(a.transpose(), x)
+            lambda_1 = abs(x).max()
+            x = x / x.max()
+
+        return x
+
+    @staticmethod
+    def powerMethod(totals):
+        tolerable_error = 0.001
+        size = len(totals)
+        a = np.array(totals)
+        x = np.ones(size)
+        max_iteration = 10
+        lambda_old = 1.0
+        condition =  True
+        step = 1
+        while condition:
+            x = np.matmul(a.transpose(), x)
+            lambda_new = max(abs(x))
+            x = x/lambda_new
+
+            print('\nSTEP %d' %(step))
+            print('----------')
+            print('Eigen Value = %0.4f' %(lambda_new))
+            print('Eigen Vector: ')
+            for i in range(size):
+                print('%0.3f\t' % (x[i]))
+            
+            step = step + 1
+            if step > max_iteration:
+                print('Not convergent in given maximum iteration!')
+                break
+            
+            # Calculating error
+            error = abs(lambda_new - lambda_old)
+            print('errror='+ str(error))
+            lambda_old = lambda_new
+            condition = error > tolerable_error
+
+
+    def calculateLexRank(self, totals):
+        umbral = config['UMBRAL']
+        dampingFactor = config['DAMPINGFACTOR']
+        #Se calcula la similitud de cosenos
+        #totals_matrix = np.array(totals)
+        totals_matrix = totals
+        dist_out = 1 - pairwise_distances(totals_matrix, metric="cosine")
+        dist_out = np.round(dist_out, 2)
+        #print(dist_out)
+
+        #Se aplica el umbral 
+        #Se normaliza para obtener vector de cambios
+        totals_umbral = []
+        for cosine_val in dist_out:
+            cosine_val = [1 if val > umbral else 0 for val in cosine_val]
+            cosine_val = [round(val / sum(cosine_val), 2) for val in cosine_val]
+            totals_umbral.append(cosine_val)
+        #print (totals_umbral)
+
+        #Convertir la matriz estocástica a irreducible y aperiódica
+        size = len(totals_umbral)
+        totals_damping = []
+        for total_umbral in totals_umbral:
+            total_umbral = [round((dampingFactor/size) + (1 - dampingFactor), 2) * val for val in total_umbral]
+            totals_damping.append(total_umbral)
+
+        #print (totals_damping)
+        #Calculate powerMethod
+        #self.powerMethod(totals_damping) #método mencionado en el algoritmo utilizado
+        vactorProbability = self.powerMethodNumpy(totals_damping)
+        print(vactorProbability)
+        return vactorProbability

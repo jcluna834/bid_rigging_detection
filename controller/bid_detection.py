@@ -57,8 +57,6 @@ class BidRiggingDetection(BaseController):
         try:
             bidRiggingController = BidRiggingDetection()
             announcement = bidRiggingController.announcement_dao.get_announcement(announcementID)
-            print("-------------")
-            print(announcement)
         except:
             #Se limpia el historico
             return jsonify(status_code=500, message='Error to get announcement!')
@@ -106,7 +104,23 @@ class BidRiggingDetection(BaseController):
                     'Anaylis': response
                 }
                 anaylisis_prod.append(data)
-                    
+            
+            #Se calcula la probabilidad de manipulación por documento siguiendo el algoritmo LexRank
+            totalsByProducts = []
+            for proposal in proposals:
+                totalsByProducts.append([products["Total"] for products in proposal["productsInfo"]])
+
+            lexRank = bidRiggingController.bid_detector.calculateLexRank(totalsByProducts)
+            anaylisis_docs = []
+            i = 0
+            for document in douments:
+                data = {
+                    'docId': document,
+                    'probabilityLexRank': round(lexRank[i], 2),
+                }
+                anaylisis_docs.append(data)
+                i += 1
+
             # Respuesta final entregada en el POST
             super_res_data = {
                 'DocumentsIDs': douments,
@@ -115,6 +129,7 @@ class BidRiggingDetection(BaseController):
                 'entityID': getCurrentEntity(),
                 'totalAnalysis': totalAnalysis,
                 'productsAnalysis': anaylisis_prod,
+                'documentsProbabilityLexRank': anaylisis_docs,
                 'AnalysisDate': datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
             }
 
@@ -128,3 +143,37 @@ class BidRiggingDetection(BaseController):
             #Se limpia el historico
             return jsonify(status_code=500, message='Error to analize document!')
         return jsonify(status_code=200, success=True, message='Return info match', data=super_res_data)
+
+
+    @app.route("/api/v1/bidrigging/detect/executeLexRank", methods=['POST'])
+    def executeLexRank():
+        bidRiggingController = BidRiggingDetection()
+        data = request.get_json()
+        announcementCode = data['announcementCode']
+
+        # Se obtiene la información del documento
+        db = client.get_database(__collection__)
+        collection = db.BidRiggingDetection
+        responseCollection = collection.find({"responsibleCode": getCurrentUser(), "announcementCode": announcementCode})
+        proposals = list(responseCollection)
+        totals = []
+        for proposal in proposals:
+            totals.append([products["Total"] for products in proposal["productsInfo"]])
+        
+        # Se obtiene el cálculo de LexRank para cada propuesta
+        lexRank = bidRiggingController.bid_detector.calculateLexRank(totals)
+        douments = [proposal["documentID"] for proposal in proposals]
+
+        anaylisis_docs = []
+        i = 0
+        for document in douments:
+            data = {
+                'docId': document,
+                'probabilityLexRank': round(lexRank[i], 2),
+            }
+            anaylisis_docs.append(data)
+            i += 1
+
+
+        return jsonify(status_code=200, success=True, message='Return info match', data=anaylisis_docs)
+

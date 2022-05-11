@@ -41,6 +41,11 @@ class __Config__(object):
     EMAIL_PASS = 'america1927834'
     EMAIL_ADDRESS = 'jcluna834@gmail.com'
 
+    #BidRigging Algorithm
+    MAX_ITERATIONS = 10
+    UMBRAL = 0.95
+    DAMPINGFACTOR = 0.15
+
 
 app.config.from_object(__Config__)
 config = app.config

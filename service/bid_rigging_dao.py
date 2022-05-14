@@ -46,10 +46,6 @@ class BidRiggingDAO(BaseService):
             "order by d.title ").\
             bindparams(codeUser=config['USERAUTHID'], announcementCode = announcementID)
 
-        
-        print(".---------------")
-        print(stmt)
-
         records = self.db.session.execute(stmt).fetchall()
         insertObject = []
         columnNames = [column for column in self.db.session.execute(stmt).keys()]
@@ -71,6 +67,33 @@ class BidRiggingDAO(BaseService):
         doc_queryset = Document.query.filter_by(**query)
         docs = doc_queryset.one()
         return docs.to_dict_es()
+
+    def get_docs_list(self, documentsIds):
+        """
+        Fetches documents' list.
+        :param page: Current page, defaults to 1
+        :param per_page: Number of records per page, defaults to 10
+        :return: List of documents
+        """
+
+        stmt = text("select d.id as documentId, d.title, d.description as documentDescription, a.id as announcementCode, a.name as announcementName, d.fileName, d.status "
+            "from documents d join announcement a on d.announcementCode = a.id "
+            "where d.is_deleted = 0 and a.is_deleted = 0 and d.documentType = 2 and d.responsibleCode = :codeUser and a.responsible_code = :codeUser "
+            "and d.id in :documentsIds "
+            "order by d.title ").\
+            bindparams(codeUser=config['USERAUTHID'], documentsIds = documentsIds)
+
+        records = self.db.session.execute(stmt).fetchall()
+        insertObject = []
+        columnNames = [column for column in self.db.session.execute(stmt).keys()]
+        for record in records:
+            insertObject.append( dict( zip( columnNames , record ) ) )
+
+        return {
+            "data": insertObject,
+            "count": len(records)
+        }
+
 
     def create_doc(self, content, title, fileName, description='', responsibleCode='', announcementCode='', documentType=2):
         """

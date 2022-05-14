@@ -78,7 +78,6 @@ class Document(BaseController):
 
     @intercept()
     def get(self, *args, **kwargs):
-        print('-------------')
         """
         Fetches all the documents(paginated).
         :return:
@@ -109,6 +108,17 @@ class Document(BaseController):
         except:
             return Response(status_code=500, message='Error to delete Document!')
         return Response(status_code=201, message='Document deleted successfully!')
+
+
+    @app.route('/api/v1/bidrigging/getDocsList', methods=['POST'])
+    def getDocsList():
+        doc = Document()
+        docsIds = request.get_json()
+        #docsIds = request.args.get("docsIds")
+        res = doc.bid_rigging_dao.get_docs_list(docsIds['docsIds'])
+        docs_info = dict(data=[d for d in res['data']], count=res['count'])
+        
+        return jsonify(status_code=200, success=True, message='Return info docs', data=docs_info)
     
     @app.route('/api/v1/bidrigging/downloadFile/<path:filename>', methods=['GET', 'POST'])
     def download(filename):
@@ -155,7 +165,7 @@ class Document(BaseController):
                             'announcementCode': request.form.get("announcementCode"),
                             'documentID': response.data.get('id'),
                             'entityID': getCurrentEntity(),
-                            'AnalysisDate': datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                            'create_date': datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
                             'Total': sum(val_totals)
                         }
                         # Save in collection MongoDB

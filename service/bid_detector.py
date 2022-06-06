@@ -10,6 +10,32 @@ from settings import config
 class BidRiggingDetector(BaseService):
 
     @staticmethod
+    def minMaxNormalizarion(totals):
+        """
+        Calcula el min_max dado una lista de totales
+        :param totals:
+        :return min max:
+        """
+        totals_norm = []
+
+        min_bid = min(totals)
+        max_bid = max(totals)
+        for bid in totals:
+            new_val = (bid - min_bid) / (max_bid - min_bid)
+            totals_norm.append(new_val)
+
+        return totals_norm
+
+    @staticmethod
+    def calculateVariationCoeff(totals):
+        """
+        Calcula el coeficietne de variación dado una lista de totales
+        :param totals:
+        :return cv:
+        """
+        return np.std(totals) / np.mean(totals)
+
+    @staticmethod
     def calculateVariationCoeff(totals):
         """
         Calcula el coeficietne de variación dado una lista de totales
@@ -84,6 +110,7 @@ class BidRiggingDetector(BaseService):
         return normd
 
     def calculateMeasures(self, totals):
+        #totals_norm = self.minMaxNormalizarion(totals)
         cv = self.calculateVariationCoeff(totals)
         kurtosis = self.calculateKurtosisCoeff(totals)
         diffPerc = self.calculatePercentageDifference(totals)
@@ -155,7 +182,7 @@ class BidRiggingDetector(BaseService):
         totals_matrix = totals
         dist_out = 1 - pairwise_distances(totals_matrix, metric="cosine")
         #dist_out = np.round(dist_out, 2)
-        print("info:::", dist_out)
+        #print("info:::", dist_out)
 
         #Se aplica el umbral 
         #Se normaliza para obtener vector de cambios
@@ -164,7 +191,7 @@ class BidRiggingDetector(BaseService):
             cosine_val = [1 if val > umbral else 0 for val in cosine_val]
             cosine_val = [round(val / sum(cosine_val), 2) for val in cosine_val]
             totals_umbral.append(cosine_val)
-        print (totals_umbral)
+        #print (totals_umbral)
 
         #Convertir la matriz estocástica a irreducible y aperiódica
         size = len(totals_umbral)
@@ -173,9 +200,9 @@ class BidRiggingDetector(BaseService):
             total_umbral = [round((dampingFactor/size) + (1 - dampingFactor), 2) * val for val in total_umbral]
             totals_damping.append(total_umbral)
 
-        print (totals_damping)
+        #print (totals_damping)
         #Calculate powerMethod
         #vectorProbability = self.powerMethod(totals_damping) #método mencionado en el algoritmo utilizado
         vectorProbability = self.powerMethodNumpy(totals_damping)
-        print(vectorProbability)
+        #print(vectorProbability)
         return vectorProbability

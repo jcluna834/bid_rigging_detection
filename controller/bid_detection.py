@@ -1,6 +1,7 @@
 __author__ = "Julio Luna"
 __email__ = "jcluna834@gmail.com"
 
+from dbm import dumb
 from math import prod
 from controller.base import BaseController
 from flask import jsonify, request
@@ -12,7 +13,7 @@ from datetime import datetime
 from bson.objectid import ObjectId
 from service.announcement_dao import AnnouncementDAO
 import json 
-
+from bson.json_util import dumps
 
 client = MongoClient('localhost:27017')
 __collection__ = 'PlagiarismDetection'
